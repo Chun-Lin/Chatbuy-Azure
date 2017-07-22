@@ -95,7 +95,7 @@ def talk(s):
         ret['response'] = u"您想要購買什麼?"
     elif dic['q'] != "" and ("max" not in dic and "min" not in dic):
         ret['status'] = u"noprice"
-        ret['response'] = u"是否想要指定購買價格範圍呢?"
+        ret['response'] = u"好的，請告訴我您心目中的價格區間，讓我再幫您找找～我可以找得更精準?"
         ret['preitem'] = dic['q']
     elif dic['q'] != "" and ("max" in dic or "min" in dic):
         shall = u"python /Users/mac/Documents/chatbuy-azure/yahoo_v1.0/yahoo_api.py "
