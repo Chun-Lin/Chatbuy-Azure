@@ -1,0 +1,15 @@
+VoicePrint System Documentation
+
+1. Download libsvm.zip and unzip
+
+2. Put hackTrain.py and hackTest.py into libsvm's python directory
+
+3. Modify train and test directory in hackTrain.py and hackTest.py to where train and test music files are.
+
+4. Usage:
+
+    (1) python hackTrain.py username  -- train file will be saved at libsvm python directory
+
+    (2) python hackTest.py username uploaded_test_file_path
+
+    (3) python SpeechRecog.py translate_file_path
