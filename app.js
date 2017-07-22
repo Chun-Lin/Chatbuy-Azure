@@ -231,10 +231,59 @@ var bot = new builder.UniversalBot(connector, [
             process2.stdout.on('data', function (data) {
                 tmp_string += data;
                 console.log("here data ==" + data)
+                dataObj = JSON.parse(data)
+                console.log('imageURL:' + dataObj.response.shop1.imageUrl)
+                console.log('TYPE: ' + typeof dataObj.response.shop1.imageUrl)
+
+                var msg = new builder.Message(session);
+                msg.attachmentLayout(builder.AttachmentLayout.carousel)
+                msg.attachments([
+                    new builder.HeroCard(session)
+                    .title(dataObj.response.shop1.price)
+
+                    .images([builder.CardImage.create(session, dataObj.response.shop1.imageUrl)])
+                    .buttons([
+                        builder.CardAction.imBack(session, "buy " + dataObj.response.shop1.price, "Buy")
+                    ]),
+                    new builder.HeroCard(session)
+                    .title(dataObj.response.shop2.price)
+
+                    .images([builder.CardImage.create(session, dataObj.response.shop2.imageUrl)])
+                    .buttons([
+                        builder.CardAction.imBack(session, "buy " + dataObj.response.shop2.price, "Buy")
+                    ]),
+                    new builder.HeroCard(session)
+                    .title(dataObj.response.shop3.price)
+
+                    .images([builder.CardImage.create(session, dataObj.response.shop3.imageUrl)])
+                    .buttons([
+                        builder.CardAction.imBack(session, "buy " + dataObj.response.shop3.price, "Buy")
+                    ])
+
+                ]);
+                session.send(msg).endDialog();
             })
             process2.stdout.on('error', function (err) {
                 console.log("error" + err)
             })
+
+            // process.stdout.on('data', function (data) {
+
+            //     var yahooResponseObj
+            //     console.log(data.toString('hex'))
+            //     yahooResponseObj = JSON.parse(hex2a(data.toString('hex')))
+            //     console.log('yahooResponseObj: ' + yahooResponseObj);
+
+            //     console.log(yahooResponseObj.response)
+
+            //     var status = yahooResponseObj.status
+            //     session.dialogData.status = status
+            //     session.dialogData.reply = yahooResponseObj.response
+            //     session.dialogData.preitem = yahooResponseObj.preitem
+
+            //     builder.Prompts.text(session, yahooResponseObj.response)
+
+            // })
 
             // process.stdout.on('end', function (xdd) {
             //     console.log("@@" + xdd + "@@")
@@ -266,47 +315,120 @@ function hex2a(hexx) {
     return str;
 }
 
-// Add dialog to return list of shirts available
-bot.dialog('showShirts', function (session) {
-    var msg = new builder.Message(session);
-    msg.attachmentLayout(builder.AttachmentLayout.carousel)
-    msg.attachments([
-        new builder.HeroCard(session)
-        .title("Classic White T-Shirt")
-        .subtitle("100% Soft and Luxurious Cotton")
-        .text("Price is $25 and carried in sizes (S, M, L, and XL)")
-        .images([builder.CardImage.create(session, 'https://g-search1.alicdn.com/bao/uploaded/i4/2637669932/TB2UGt8cbXlpuFjy1zbXXb_qpXa_!!2637669932.jpg_240x240q50')])
-        .buttons([
-            builder.CardAction.imBack(session, "buy classic white t-shirt", "Buy")
-        ]),
-        new builder.HeroCard(session)
-        .title("Classic Gray T-Shirt")
-        .subtitle("100% Soft and Luxurious Cotton")
-        .text("Price is $25 and carried in sizes (S, M, L, and XL)")
-        .images([builder.CardImage.create(session, 'http://www.happybai.com/img/upload/happybai/product/armani-clothes-0806-10_3457541_1444573797364.jpg')])
-        .buttons([
-            builder.CardAction.imBack(session, "buy classic gray t-shirt", "Buy")
-        ]),
-        new builder.HeroCard(session)
-        .title("Classic Gray T-Shirt")
-        .subtitle("100% Soft and Luxurious Cotton")
-        .text("Price is $25 and carried in sizes (S, M, L, and XL)")
-        .images([builder.CardImage.create(session, 'https://cdn02.pinkoi.com/product/1zMLd5oc/0/500x0.jpg')])
-        .buttons([
-            builder.CardAction.imBack(session, "buy classic gray t-shirt", "Buy")
-        ]),
-        new builder.HeroCard(session)
-        .title("Classic Blue T-Shirt")
-        .subtitle("100% Soft and Luxurious Cotton")
-        .text("Price is $25 and carried in sizes (S, M, L, and XL)")
-        .images([builder.CardImage.create(session, 'http://www.inif.com.tw/product/image/pics/1inif印衣服-一件也能印，T恤、POLO衫、團體服運動服.bmp')])
-        .buttons([
-            builder.CardAction.imBack(session, "buy classic gray t-shirt", "Buy")
-        ])
+
+// Add dialog to handle 'Buy' button click
+bot.dialog('buyButtonClick', [
+    function (session, args, next) {
+        var result = args.intent.matched.input.match(/\d+/g)
+        price = result[0]
+
+        if (price) {
+            console.log(price);
+
+            var msg = new builder.Message(session);
+            msg.attachmentLayout(builder.AttachmentLayout.carousel)
+            msg.attachments([
+                new builder.HeroCard(session)
+                .title("確定要購買？")
+
+                .buttons([
+                    builder.CardAction.imBack(session, "yes" + price, "確定"),
+                    builder.CardAction.imBack(session, "no", "不要")
+                ])
+            ])
+            session.send(msg).endDialog();
+
+            // session.send("確定要購買？").endDialog();
+            // Initialize cart item
+            // var item = session.dialogData.item = {
+            //     product: "classic " + color[0].toLowerCase() + " t-shirt",
+            //     size: size ? size[0].toLowerCase() : null,
+            //     price: 25.0,
+            //     qty: 1
+            // };
+            // if (!item.size) {
+            //     // Prompt for size
+            //     builder.Prompts.choice(session, "What size would you like?", "Small|Medium|Large|Extra Large");
+            // } else {
+            //     //Skip to next waterfall step
+            //     next();
+            // }
+        } else {
+            // Invalid product
+            session.send("I'm sorry... That product wasn't found.").endDialog();
+        }
+    },
+    function (session, results) {
+        // Save size if prompted
+        var item = session.dialogData.item;
+        if (results.response) {
+            item.size = results.response.entity.toLowerCase();
+        }
+
+        // Add to cart
+        if (!session.userData.cart) {
+            session.userData.cart = [];
+        }
+        session.userData.cart.push(item);
+
+        // Send confirmation to users
+        session.send("A '%(size)s %(product)s' has been added to your cart.", item).endDialog();
+    }
+]).triggerAction({
+    matches: /(buy|add)/i
+});
 
 
-    ]);
-    session.send(msg).endDialog();
-}).triggerAction({
-    matches: /^(clothes|list)/i
+
+// Add dialog to handle 'Buy' button click
+bot.dialog('confirmButtonClick', [
+    function (session, args, next) {
+        var result = args.intent.matched.input.match(/\d+/g)
+        price = result[0]
+        console.log(price)
+
+        var process3 = spawn("python", ["/Users/mac/Documents/chatbuy-azure/credit.py", "-a", "B199443055", "-p", "3055", "-n", price, "-t", "mbp", "-o", "2"]);
+
+        var tmp_string = ""
+        process3.stdout.on('data', function (data) {
+            tmp_string += data;
+            console.log("CTBC data ==" + data)
+            console.log('data type: ' + typeof data)
+            if (data == 1) {
+                console.log('test data')
+                var date = new Date();
+                session.send('您已於' + date.toLocaleString() + '，以中國信託信用卡（卡片末四碼3055）付款NT$' + price).endDialog();
+            }
+            // console.log('imageURL:' + dataObj.response.shop1.imageUrl)
+            // console.log('TYPE: ' + typeof dataObj.response.shop1.imageUrl)
+        })
+
+
+        if (args.intent.matched[0] == "yes") {
+
+        } else if (args.intent.matched[0] == "no") {
+
+        } else {
+            // Invalid product
+            session.send("I'm sorry... That product wasn't found.").endDialog();
+        }
+    },
+    function (session, results) {
+        // Save size if prompted
+        var item = session.dialogData.item;
+        if (results.response) {
+            item.size = results.response.entity.toLowerCase();
+        }
+
+        // Add to cart
+        if (!session.userData.cart) {
+            session.userData.cart = [];
+        }
+        session.userData.cart.push(item);
+
+        // Send confirmation to users
+        session.send("A '%(size)s %(product)s' has been added to your cart.", item).endDialog();
+    }
+]).triggerAction({
+    matches: /(yes|no)/i
 });
