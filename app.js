@@ -235,29 +235,32 @@ var bot = new builder.UniversalBot(connector, [
                 console.log('imageURL:' + dataObj.response.shop1.imageUrl)
                 console.log('TYPE: ' + typeof dataObj.response.shop1.imageUrl)
 
+                session.dialogData.shopUrl = dataObj.response.shop1.url
+
+
                 var msg = new builder.Message(session);
                 msg.attachmentLayout(builder.AttachmentLayout.carousel)
                 msg.attachments([
                     new builder.HeroCard(session)
-                    .title(dataObj.response.shop1.price)
-
+                    .title("價錢 NT$" + dataObj.response.shop1.price)
+                    .subtitle(dataObj.response.shop1.url)
                     .images([builder.CardImage.create(session, dataObj.response.shop1.imageUrl)])
                     .buttons([
-                        builder.CardAction.imBack(session, "buy " + dataObj.response.shop1.price, "Buy")
+                        builder.CardAction.imBack(session, "buy " + dataObj.response.shop1.price, "購買")
                     ]),
                     new builder.HeroCard(session)
-                    .title(dataObj.response.shop2.price)
-
+                    .title("價錢 NT$" + dataObj.response.shop2.price)
+                    .subtitle(dataObj.response.shop2.url)
                     .images([builder.CardImage.create(session, dataObj.response.shop2.imageUrl)])
                     .buttons([
-                        builder.CardAction.imBack(session, "buy " + dataObj.response.shop2.price, "Buy")
+                        builder.CardAction.imBack(session, "buy " + dataObj.response.shop2.price, "購買")
                     ]),
                     new builder.HeroCard(session)
-                    .title(dataObj.response.shop3.price)
-
+                    .title("價錢 NT$" + dataObj.response.shop3.price)
+                    .subtitle(dataObj.response.shop3.url)
                     .images([builder.CardImage.create(session, dataObj.response.shop3.imageUrl)])
                     .buttons([
-                        builder.CardAction.imBack(session, "buy " + dataObj.response.shop3.price, "Buy")
+                        builder.CardAction.imBack(session, "buy " + dataObj.response.shop3.price, "購買")
                     ])
 
                 ]);
@@ -324,35 +327,19 @@ bot.dialog('buyButtonClick', [
 
         if (price) {
             console.log(price);
-
             var msg = new builder.Message(session);
             msg.attachmentLayout(builder.AttachmentLayout.carousel)
             msg.attachments([
                 new builder.HeroCard(session)
                 .title("確定要購買？")
-
                 .buttons([
+                    builder.CardAction.openUrl(session, "http://goo.gl/cGkMJU", "前往品項"),
                     builder.CardAction.imBack(session, "yes" + price, "確定"),
                     builder.CardAction.imBack(session, "no", "不要")
                 ])
             ])
             session.send(msg).endDialog();
 
-            // session.send("確定要購買？").endDialog();
-            // Initialize cart item
-            // var item = session.dialogData.item = {
-            //     product: "classic " + color[0].toLowerCase() + " t-shirt",
-            //     size: size ? size[0].toLowerCase() : null,
-            //     price: 25.0,
-            //     qty: 1
-            // };
-            // if (!item.size) {
-            //     // Prompt for size
-            //     builder.Prompts.choice(session, "What size would you like?", "Small|Medium|Large|Extra Large");
-            // } else {
-            //     //Skip to next waterfall step
-            //     next();
-            // }
         } else {
             // Invalid product
             session.send("I'm sorry... That product wasn't found.").endDialog();
@@ -384,51 +371,32 @@ bot.dialog('buyButtonClick', [
 bot.dialog('confirmButtonClick', [
     function (session, args, next) {
         var result = args.intent.matched.input.match(/\d+/g)
-        price = result[0]
-        console.log(price)
-
-        var process3 = spawn("python", ["/Users/mac/Documents/chatbuy-azure/credit.py", "-a", "B199443055", "-p", "3055", "-n", price, "-t", "mbp", "-o", "2"]);
-
-        var tmp_string = ""
-        process3.stdout.on('data', function (data) {
-            tmp_string += data;
-            console.log("CTBC data ==" + data)
-            console.log('data type: ' + typeof data)
-            if (data == 1) {
-                console.log('test data')
-                var date = new Date();
-                session.send('您已於' + date.toLocaleString() + '，以中國信託信用卡（卡片末四碼3055）付款NT$' + price).endDialog();
-            }
-            // console.log('imageURL:' + dataObj.response.shop1.imageUrl)
-            // console.log('TYPE: ' + typeof dataObj.response.shop1.imageUrl)
-        })
-
-
         if (args.intent.matched[0] == "yes") {
+            price = result[0]
 
+            var process3 = spawn("python", ["/Users/mac/Documents/chatbuy-azure/credit.py", "-a", "B199443055", "-p", "3055", "-n", price, "-t", "mbp", "-o", "2"]);
+
+            var tmp_string = ""
+            process3.stdout.on('data', function (data) {
+                tmp_string += data;
+                console.log("CTBC data ==" + data)
+                console.log('data type: ' + typeof data)
+                if (data != 0) {
+                    console.log('test data')
+                    var date = new Date();
+                    session.send('您已於' + date.toLocaleString() + '，以中國信託信用卡（卡片末四碼3055）付款NT$' + price + '。查看品項：https://tw.bid.yahoo.com/item/100332347060 。目前信用餘額為' + data + "。").endDialog();
+                } else {
+                    session.send('您沒有錢拉～～～').endDialog();
+                }
+            })
         } else if (args.intent.matched[0] == "no") {
-
+            session.send("感謝您的支持！").endDialog();
         } else {
             // Invalid product
+            location.href = session.dialogData.shopUrl
             session.send("I'm sorry... That product wasn't found.").endDialog();
         }
-    },
-    function (session, results) {
-        // Save size if prompted
-        var item = session.dialogData.item;
-        if (results.response) {
-            item.size = results.response.entity.toLowerCase();
-        }
-
-        // Add to cart
-        if (!session.userData.cart) {
-            session.userData.cart = [];
-        }
-        session.userData.cart.push(item);
-
-        // Send confirmation to users
-        session.send("A '%(size)s %(product)s' has been added to your cart.", item).endDialog();
     }
 ]).triggerAction({
-    matches: /(yes|no)/i
+    matches: /(yes|no|nothing)/i
 });
