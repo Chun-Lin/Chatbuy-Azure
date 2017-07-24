@@ -71,6 +71,7 @@ var bot = new builder.UniversalBot(connector, [
                 // To do: modify here to parse the return results
                 process.stdout.on('data', function (data) {
                     tmp = hex2a(data.toString('hex'))
+                    builder.Prompts.text(session, "你的聲音好好聽 (*´∀`)~♥，我已經記住了唷！既然已經是朋友了的話，想要買什麼都可以跟我說喲～");
                     // console.log(tmp)
                     /*
                     console.log(data)
@@ -99,14 +100,15 @@ var bot = new builder.UniversalBot(connector, [
                 });
                 process.stdout.on('end', function (XD) {
                     console.log("@@" + XD + "@@")
-                    // console.log("WTF " + datastring + "><?")
+                    // console.log("WTF " + datastring + "><?") 
+                    console.log(datastring)
                     loginPermission = (datastring)
                     // console.log('========GOT======' + loginPermission)
                     var patt1 = /(\[)-1.0(\])/g;
                     var loginResult = loginPermission.match(patt1);
                     // console.log('result: ' + loginResult)
 
-                    if (loginResult != null) {
+                    if (loginResult == null) {
                         builder.Prompts.text(session, "你的聲音好好聽 (*´∀`)~♥，我已經記住了唷！既然已經是朋友了的話，想要買什麼都可以跟我說喲～");
 
                         // session.send('你的聲音好好聽 (*´∀`)~♥，我已經記住了唷！既然已經是朋友了的話，想要買什麼都可以跟我說喲～');
